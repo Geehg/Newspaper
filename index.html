@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Newspaper Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather&family=Noto+Serif+KR&display=swap" rel="stylesheet"/>
+  <style>
+    html { font-size: 16px; }
+    @media (max-width: 1024px) {
+      html { font-size: 14px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 768px) {
+      html { font-size: 12px; }
+    }
+    iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: none;
+    }
+    body {
+      margin: 0;
+      font-family: 'Merriweather', 'Noto Serif KR', serif;
+      background-color: #f5f0e6;
+      color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      line-height: 1.4;
+      letter-spacing: 0.3px;
+    }
+    header {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      width: 100%;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-size: 3em;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    header .datetime {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2em;
+      margin-top: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 960px;
+    }
+    .panel {
+      border: 1px solid #333;
+      padding: 15px;
+      background: #ffffff;
+      position: relative;
+    }
+    .panel h2 {
+      margin: 0 0 10px 0;
+      font-size: 1.25em;
+      border-bottom: 3px double #000;
+      padding-bottom: 5px;
+    }
+    .byline {
+      font-size: 0.75em;
+      color: #666;
+      position: absolute;
+      top: 15px;
+      right: 15px;
+    }
+  
+body.dark-mode {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+body.dark-mode .panel {
+  background: #2a2a2a;
+  border-color: #555;
+}
+body.dark-mode header {
+  border-bottom: 2px solid #444;
+}
+body.dark-mode a {
+  color: #ffa500;
+}
+
+</style>
+</head>
+<body>
+
+<button onclick="document.body.classList.toggle('dark-mode')" style="position: fixed; top: 10px; right: 10px; z-index: 999;">🌙 테마 전환</button>
+
+  <header>
+    <h1>Dashboard</h1>
+    <div class="datetime">
+      <span id="date">Loading date...</span>
+      <span id="time">00:00</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>WEATHER</h2>
+      <div class="byline">서울특별시</div>
+      <p><strong>날씨:</strong> <span id="weather">-</span></p>
+      <p><strong>기온:</strong> <span id="temp">-</span></p>
+      <div id="forecast" style="margin-top: 10px;">
+        <table style="width: 100%; font-size: 0.9em; border-collapse: collapse;">
+          <thead>
+            <tr><th>요일</th><th>오전</th><th>오후</th></tr>
+          </thead>
+          <tbody id="forecast-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" id="DUST">
+      <h2>🌫️ 미세먼지</h2>
+      <p><strong>미세먼지(PM10):</strong> <span id="pm10">-</span></p>
+      <p><strong>초미세먼지(PM2.5):</strong> <span id="pm25">-</span></p>
+    </div>
+
+    <div class="panel">
+      <h2>CALENDAR</h2>
+      <div class="byline">오늘의 일정</div>
+      <p>[Calendar here]</p>
+    </div>
+
+    <div class="panel">
+      <h2>CCTV LIVE</h2>
+      <div class="byline">SBS 실시간 뉴스</div>
+      <iframe
+        src="https://www.youtube.com/embed/SBgrR96YkS0?autoplay=1&mute=1&playsinline=1"
+        title="SBS Live"
+        allow="autoplay; encrypted-media"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="no-referrer">
+      </iframe>
+    </div>
+
+    <div class="panel">
+      <h2>NOTION</h2>
+      <div class="byline">공유 메모 요약</div>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed diam nonummy nibh euismod tincidunt.</p>
+    </div>
+
+    <div class="panel">
+      <h2>NEWS FEED</h2>
+      <div class="byline">실시간 뉴스 RSS</div>
+      <ul id="rss-feed">
+        <li>Loading news...</li>
+      </ul>
+    </div>
+  </div>
+
+  <script defer>
+    document.addEventListener("DOMContentLoaded", function () {
+  
+function applyThemeByTime() {
+  const hour = new Date().getHours();
+  if (hour >= 18 || hour < 6) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+}
+applyThemeByTime();
+setInterval(applyThemeByTime, 60000); // 1분마다 테마 확인
+
+      function updateTime() {
+        const now = new Date();
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('date').textContent = now.toLocaleDateString('ko-KR', dateOptions);
+        document.getElementById('time').textContent = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      }
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      async function loadRSS() {
+        const proxy = "https://api.allorigins.win/get?url=";
+        const feedUrl = encodeURIComponent("https://www.hani.co.kr/rss/");
+        try {
+          const res = await fetch(proxy + feedUrl);
+          const data = await res.json();
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(data.contents, "text/xml");
+          const items = Array.from(xml.querySelectorAll("item"));
+          const list = document.getElementById("rss-feed");
+          let index = 0;
+
+          function showNextBatch() {
+            list.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+              const item = items[(index + i) % items.length];
+              const li = document.createElement("li");
+              const a = document.createElement("a");
+              a.href = item.querySelector("link").textContent;
+              a.textContent = item.querySelector("title").textContent;
+              a.target = "_blank";
+              li.appendChild(a);
+              list.appendChild(li);
+            }
+            index = (index + 3) % items.length;
+          }
+
+          showNextBatch();
+          setInterval(showNextBatch, 5000);
+        } catch (e) {
+          console.error("RSS load error", e);
+        }
+      }
+      loadRSS();
+
+      const cityMapping = [
+        { name: "Seoul", lat: 37.5, lon: 127.0 },
+        { name: "Busan", lat: 35.1, lon: 129.0 },
+        { name: "Incheon", lat: 37.4, lon: 126.7 },
+        { name: "Daegu", lat: 35.9, lon: 128.6 },
+        { name: "Daejeon", lat: 36.3, lon: 127.4 }
+      ];
+
+      function findNearestCity(lat, lon) {
+        let minDist = Infinity, nearest = null;
+        cityMapping.forEach(c => {
+          const dist = Math.hypot(lat - c.lat, lon - c.lon);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = c.name;
+          }
+        });
+        return nearest;
+      }
+
+      function updateWeather(city) {
+        fetch('region_weather_data.json')
+          .then(res => res.json())
+          .then(data => {
+            const info = data[city];
+            document.getElementById('weather').textContent = info.weather;
+            document.getElementById('temp').textContent = info.temp;
+            document.getElementById('pm10').textContent = info.pm10.grade + ' (' + info.pm10.value + '㎍/㎥)';
+            document.getElementById('pm25').textContent = info.pm25;
+
+            const forecast = info.forecast;
+            const tbody = document.getElementById('forecast-body');
+            forecast.forEach(day => {
+              const row = document.createElement('tr');
+              row.innerHTML = `<td>${day.date}</td><td>${day.am}</td><td>${day.pm}</td>`;
+              tbody.appendChild(row);
+            });
+          });
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const city = findNearestCity(lat, lon);
+          updateWeather(city);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
